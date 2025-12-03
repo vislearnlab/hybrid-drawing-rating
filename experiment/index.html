@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Drawing Identification</title>
+        <script src="https://unpkg.com/jspsych@7.3.4"></script>
+        <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
+        <script src="https://unpkg.com/@jspsych/plugin-survey@0.2.1"></script>
+    </head>
+<body>
+    <script>
+        const jsPsych = initJsPsych();
+
+        const trial = {
+        type: jsPsychSurvey,
+        pages: [[
+            {
+            type: 'html',
+            prompt: `
+                <img src="../stimuli/mockup/a_dinosaur_truck_sketch_adult.png" style="max-width: 400px; display: block; margin: 0 auto 20px;">
+                <p><strong>What percentage of the drawing is any/each of the following?</strong></p>
+                
+                <div style="margin: 20px 0;">
+                <select name="category1" style="margin-right: 20px;">
+                    <option value="">Select category...</option>
+                    <option value="dinosaur">dinosaur</option>
+                    <option value="truck">truck</option>
+                    <option value="rabbit">rabbit</option>
+                    <option value="none">None of those</option>
+                </select>
+                <input type="range" name="percentage1" min="0" max="100" value="50" style="width: 200px;">
+                <span id="value1">50%</span>
+                <input type="text" name="explanation1" placeholder="Explain what it contains..." style="display: none; margin-left: 10px; width: 200px;">
+                </div>
+                
+                <div style="margin: 20px 0;">
+                <select name="category2" style="margin-right: 20px;">
+                    <option value="">Select category...</option>
+                    <option value="dinosaur">dinosaur</option>
+                    <option value="truck">truck</option>
+                    <option value="rabbit">rabbit</option>
+                    <option value="none">None of those</option>
+                </select>
+                <input type="range" name="percentage2" min="0" max="100" value="50" style="width: 200px;">
+                <span id="value2">50%</span>
+                <input type="text" name="explanation2" placeholder="Explain what it contains..." style="display: none; margin-left: 10px; width: 200px;">
+                </div>
+                
+                <div style="margin: 20px 0;">
+                <select name="category3" style="margin-right: 20px;">
+                    <option value="">Select category...</option>
+                    <option value="dinosaur">dinosaur</option>
+                    <option value="truck">truck</option>
+                    <option value="rabbit">rabbit</option>
+                    <option value="none">None of those</option>
+                </select>
+                <input type="range" name="percentage3" min="0" max="100" value="50" style="width: 200px;">
+                <span id="value3">50%</span>
+                <input type="text" name="explanation3" placeholder="Explain what it contains..." style="display: none; margin-left: 10px; width: 200px;">
+                </div>
+            `
+            }
+        ]]
+        };
+
+        setTimeout(() => {
+        ['1','2','3'].forEach(i => {
+            const slider = document.querySelector(`input[name="percentage${i}"]`);
+            const dropdown = document.querySelector(`select[name="category${i}"]`);
+            const textbox = document.querySelector(`input[name="explanation${i}"]`);
+            
+            if(slider) {
+            slider.oninput = function() {
+                document.getElementById(`value${i}`).textContent = this.value + '%';
+            }
+            }
+            
+            if(dropdown && textbox) {
+            dropdown.onchange = function() {
+                if(this.value === 'none') {
+                textbox.style.display = 'inline';
+                slider.style.display = 'none';
+                document.getElementById(`value${i}`).style.display = 'none';
+                } else {
+                textbox.style.display = 'none';
+                slider.style.display = 'inline';
+                document.getElementById(`value${i}`).style.display = 'inline';
+                }
+            }
+            }
+        });
+        }, 100);
+
+        jsPsych.run([trial]);
+    </script>
+</body>
+</html>
