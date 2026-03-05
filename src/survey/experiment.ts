@@ -125,7 +125,7 @@ async function saveData(jsPsych: JsPsych, redirect = false) {
   };
 
   try {
-    await fetch(import.meta.env.VITE_BASE_PATH + '/submit', {
+    await fetch('/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -135,9 +135,12 @@ async function saveData(jsPsych: JsPsych, redirect = false) {
   }
 
   if (redirect) {
-    if (participant.source === 'prolific' && import.meta.env.VITE_COMPLETION_CODE) {
+    if (participant.source === 'prolific') {
+      let completion_code = await fetch('/completion_code', {
+        method: 'GET'
+      });
       window.location.href =
-        `https://app.prolific.com/submissions/complete?cc=${import.meta.env.VITE_COMPLETION_CODE}`;
+        `https://app.prolific.com/submissions/complete?cc=${completion_code}`;
     }
     // If not Prolific, participant just sees the thank-you screen — no redirect
   }
@@ -197,6 +200,7 @@ function makeRatingTrial(
     <p class="val-hint" id="val-hint"></p>
 
     ${hiddenInputs}
+    <input type="submit" id="jspsych-survey-html-form-next" class="test jspsych-btn jspsych-survey-html-form" value="'+trial.button_label+'" style="visibility:hidden; fill:black;"></input>
   `;
 
   return {
@@ -215,7 +219,6 @@ function makeRatingTrial(
       </p>
     `,
     html,
-    button_label: 'Continue',
     autofocus: '',
     data: {
       task: 'rating',
@@ -275,6 +278,7 @@ function makeRatingTrial(
 
       checkboxes.forEach((cb) => {
         cb.addEventListener('change', () => {
+          console.log("checkbox event listener")
           const cat = cb.dataset.cat!;
           if (cb.checked) {
             selected.add(cat);
@@ -293,6 +297,7 @@ function makeRatingTrial(
 
       document.querySelectorAll<HTMLInputElement>('.sr-slider').forEach((slider) => {
         slider.addEventListener('input', () => {
+          console.log("slider event listener")
           const cat = slider.dataset.cat!;
           const val = slider.value;
           document.getElementById(`val-${cat}`)!.textContent = val;
@@ -302,10 +307,13 @@ function makeRatingTrial(
         });
       });
 
-      const form = submitBtn.closest('form')!;
-      form.addEventListener('submit', (e) => {
+      let curr_form:any = document.querySelector("#jspsych-survey-html-form")
+      curr_form.addEventListener('submit', (e:any) => {
+        e.stopImmediatePropagation();
+        console.log(NUM_SELECTIONS)
         if (selected.size !== NUM_SELECTIONS) {
           e.preventDefault();
+          console.log(`Please select exactly ${NUM_SELECTIONS} categories.`)
           valHint.textContent =
             `Please select exactly ${NUM_SELECTIONS} categories.`;
           return;
