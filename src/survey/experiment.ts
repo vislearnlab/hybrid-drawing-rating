@@ -173,7 +173,7 @@ function makeRatingTrial(
     <div class="slider-row" id="row-${cat}" style="display:none;">
       <span class="sr-label">${cat}</span>
       <input type="range" class="sr-slider" data-cat="${cat}"
-             min="0" max="100" value="0" step="1">
+             min="1" max="100" value="0" step="1">
       <span class="sr-value" id="val-${cat}">0</span>
     </div>`,
   ).join('');
@@ -200,7 +200,6 @@ function makeRatingTrial(
     <p class="val-hint" id="val-hint"></p>
 
     ${hiddenInputs}
-    <input type="submit" id="jspsych-survey-html-form-next" class="test jspsych-btn jspsych-survey-html-form" value="'+trial.button_label+'" style="visibility:hidden; fill:black;"></input>
   `;
 
   return {
@@ -220,6 +219,7 @@ function makeRatingTrial(
     `,
     html,
     autofocus: '',
+    button_label: 'Continue',
     data: {
       task: 'rating',
       stimulus_id: stimulus.id,
@@ -231,112 +231,119 @@ function makeRatingTrial(
       const sliderHeading = document.getElementById('slider-heading')!;
       const valHint = document.getElementById('val-hint')!;
       const hiddenSelected = document.getElementById('hidden-selected') as HTMLInputElement;
-      const submitBtn = document.querySelector<HTMLInputElement>(
-        '#jspsych-survey-html-form-next',
-      )!;
+      const submitBtn = document.getElementById(
+        'jspsych-survey-html-form-next',
+      ) as HTMLInputElement;
 
+      // Track which sliders have been deliberately moved (touched)
       const selected = new Set<string>();
-      const sliderMoved = new Set<string>();
+      const touched = new Set<string>();
+
+      // Hide the real submit button; we drive submission manually
+      submitBtn.style.display = 'none';
+
+      // Our visible "Continue" button
+      const continueBtn = document.createElement('button');
+      continueBtn.type = 'button';
+      continueBtn.id = 'continue-btn';
+      continueBtn.className = 'jspsych-btn';
+      continueBtn.textContent = 'Continue';
+      submitBtn.insertAdjacentElement('afterend', continueBtn);
+
+      function showError(msg: string) {
+        valHint.textContent = msg;
+        valHint.style.color = '#c0392b';
+      }
+
+      function clearError() {
+        valHint.textContent = '';
+      }
+
+      function canAdvance(): boolean {
+        if (selected.size !== NUM_SELECTIONS) return false;
+        return [...selected].every((cat) => touched.has(cat));
+      }
 
       function updateState() {
+        // Count display
         countDisplay.textContent = `${selected.size} / ${NUM_SELECTIONS} selected`;
         countDisplay.classList.toggle('count-ready', selected.size === NUM_SELECTIONS);
 
+        // Checkbox enable/disable
         checkboxes.forEach((cb) => {
           const cat = cb.dataset.cat!;
           const label = document.getElementById(`lbl-${cat}`)!;
-          if (!selected.has(cat) && selected.size >= NUM_SELECTIONS) {
-            label.classList.add('disabled');
-            cb.disabled = true;
-          } else {
-            label.classList.remove('disabled');
-            cb.disabled = false;
-          }
+          const atMax = !selected.has(cat) && selected.size >= NUM_SELECTIONS;
+          label.classList.toggle('disabled', atMax);
           label.classList.toggle('checked', selected.has(cat));
+          // Disable checkbox selection when four have been selected
+          cb.disabled = atMax;
         });
 
+        // Slider rows
         CATEGORIES.forEach((cat) => {
           const row = document.getElementById(`row-${cat}`)!;
-          row.style.display = selected.has(cat) ? 'flex' : 'none';
-          if (!selected.has(cat)) {
+          const isSelected = selected.has(cat);
+          row.style.display = isSelected ? 'flex' : 'none';
+          if (!isSelected) {
+            // Reset if deselected
+            const slider = row.querySelector<HTMLInputElement>('.sr-slider')!;
+            slider.value = '1';
+            document.getElementById(`val-${cat}`)!.textContent = '—';
             (document.getElementById(`hidden-${cat}`) as HTMLInputElement).value = '';
+            touched.delete(cat);
           }
         });
 
         sliderHeading.style.display = selected.size > 0 ? 'block' : 'none';
         hiddenSelected.value = [...selected].join(',');
 
+        // Hint text
         if (selected.size === NUM_SELECTIONS) {
-          const allMoved = [...selected].every((cat) => sliderMoved.has(cat));
-          valHint.textContent = allMoved
-            ? ''
-            : 'Please adjust each slider before continuing.';
+          const untouched = [...selected].filter((c) => !touched.has(c));
+          if (untouched.length > 0) {
+            showError(`Please rate your confidence for: ${untouched.join(', ')}`);
+          } else {
+            clearError();
+          }
         } else {
-          valHint.textContent = '';
+          clearError();
         }
       }
 
+      // Checkbox listeners
       checkboxes.forEach((cb) => {
         cb.addEventListener('change', () => {
-          console.log("checkbox event listener")
           const cat = cb.dataset.cat!;
-          if (cb.checked) {
-            selected.add(cat);
-          } else {
-            selected.delete(cat);
-            sliderMoved.delete(cat);
-            const slider = document.querySelector<HTMLInputElement>(
-              `.sr-slider[data-cat="${cat}"]`,
-            )!;
-            slider.value = '0';
-            document.getElementById(`val-${cat}`)!.textContent = '0';
-          }
+          cb.checked ? selected.add(cat) : selected.delete(cat);
           updateState();
         });
       });
 
+      // Slider listeners
       document.querySelectorAll<HTMLInputElement>('.sr-slider').forEach((slider) => {
         slider.addEventListener('input', () => {
-          console.log("slider event listener")
           const cat = slider.dataset.cat!;
           const val = slider.value;
           document.getElementById(`val-${cat}`)!.textContent = val;
           (document.getElementById(`hidden-${cat}`) as HTMLInputElement).value = val;
-          sliderMoved.add(cat);
+          touched.add(cat);
           updateState();
         });
       });
 
-      let curr_form:any = document.querySelector("#jspsych-survey-html-form")
-      curr_form.addEventListener('submit', (e:any) => {
-        e.stopImmediatePropagation();
-        console.log(NUM_SELECTIONS)
-        if (selected.size !== NUM_SELECTIONS) {
-          e.preventDefault();
-          console.log(`Please select exactly ${NUM_SELECTIONS} categories.`)
-          valHint.textContent =
-            `Please select exactly ${NUM_SELECTIONS} categories.`;
+      // Continue button triggers the hidden submit
+      continueBtn.addEventListener('click', () => {
+        if (!canAdvance()) {
+          if (selected.size !== NUM_SELECTIONS) {
+            showError(`Please select exactly ${NUM_SELECTIONS} categories.`);
+          } else {
+            const untouched = [...selected].filter((c) => !touched.has(c));
+            showError(`Please rate your confidence for: ${untouched.join(', ')}`);
+          }
           return;
         }
-        const allMoved = [...selected].every((cat) => sliderMoved.has(cat));
-        if (!allMoved) {
-          e.preventDefault();
-          valHint.textContent =
-            'Please adjust each slider before continuing.';
-          return;
-        }
-        const allZero = [...selected].every((cat) => {
-          const slider = document.querySelector<HTMLInputElement>(
-            `.sr-slider[data-cat="${cat}"]`,
-          )!;
-          return slider.value === '0';
-        });
-        if (allZero) {
-          e.preventDefault();
-          valHint.textContent =
-            'Please rate your confidence in each of the items you recognize.';
-          return;
-        }
+        submitBtn.click();
       });
 
       updateState();
@@ -344,7 +351,7 @@ function makeRatingTrial(
 
     on_finish: function (data: any) {
       const raw = data.response;
-      const cats = raw.selected_categories
+      const cats: string[] = raw.selected_categories
         ? raw.selected_categories.split(',')
         : [];
       const confidence: Record<string, number> = {};
