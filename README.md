@@ -1,1 +1,1 @@
-# Human percpetual judgments of hybrid drawing components
+# Drawing identification study

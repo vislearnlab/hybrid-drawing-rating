@@ -1,0 +1,43 @@
+{
+  "name": "hybrid-drawing-rating",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vislearnlab/hybrid-drawing-rating.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/vislearnlab/hybrid-drawing-rating/issues"
+  },
+  "homepage": "https://github.com/vislearnlab/hybrid-drawing-rating#readme",
+  "dependencies": {
+    "@jspsych/plugin-external-html": "^2.1.0",
+    "@jspsych/plugin-html-button-response": "^2.1.0",
+    "@jspsych/plugin-html-keyboard-response": "^2.1.0",
+    "@jspsych/plugin-preload": "^2.1.0",
+    "@jspsych/plugin-survey-html-form": "^2.1.0",
+    "@jspsych/plugin-survey-text": "^2.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jspsych": "^8.2.3",
+    "mongodb": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-html": "^3.2.2"
+  }
+}

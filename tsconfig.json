@@ -1,0 +1,17 @@
+{
+    "ts-node": {
+      "files": true
+    },
+    "compilerOptions": {
+      "target": "es2023",
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "isolatedModules": true,
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "outDir": "./dist"
+    },
+    "include": ["src/*.ts"]
+  }
