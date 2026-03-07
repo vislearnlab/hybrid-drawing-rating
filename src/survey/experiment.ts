@@ -30,13 +30,20 @@ function getParticipantInfo() {
   const prolificID = params.get('PROLIFIC_PID');
   const studyID = params.get('STUDY_ID');
   const sessionID = params.get('SESSION_ID');
-
+  const participantCode = params.get('code')
+  let source = "direct"
+  if (prolificID) {
+    source = "prolific"
+  } else if (participantCode) {
+    source = "sona"
+  }
   return {
     participantID: prolificID || crypto.randomUUID(),
-    source: prolificID ? 'prolific' as const : 'direct' as const,
+    source,
     prolificID,
     studyID,
     sessionID,
+    participantCode,
   };
 }
 
@@ -100,11 +107,11 @@ async function saveData(jsPsych: JsPsych, redirect = false) {
     .values();
 
   const payload = {
-    action: 'insert',
     data: {
       participantID: participant.participantID,
       source: participant.source,
       prolificID: participant.prolificID,
+      sonaCode: participant.participantCode,
       studyID: participant.studyID,
       sessionID: participant.sessionID,
       startTimestamp,
@@ -125,7 +132,7 @@ async function saveData(jsPsych: JsPsych, redirect = false) {
   };
 
   try {
-    await fetch('/submit', {
+    await fetch('submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -136,11 +143,9 @@ async function saveData(jsPsych: JsPsych, redirect = false) {
 
   if (redirect) {
     if (participant.source === 'prolific') {
-      let completion_code = await fetch('/completion_code', {
+      let completion_code = await fetch('prolific', {
         method: 'GET'
       });
-      window.location.href =
-        `https://app.prolific.com/submissions/complete?cc=${completion_code}`;
     }
     // If not Prolific, participant just sees the thank-you screen — no redirect
   }
