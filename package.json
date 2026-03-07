@@ -34,11 +34,13 @@
     "express": "^5.2.1",
     "jspsych": "^8.2.3",
     "mongodb": "^7.1.0",
+    "nanoid": "^5.1.6",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/node": "^25.3.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
   }

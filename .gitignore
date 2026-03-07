@@ -6,6 +6,7 @@ dist/
 
 # Environment secrets
 .env
+credentials/
 
 # OS files
 .DS_Store

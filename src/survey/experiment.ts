@@ -7,6 +7,7 @@ import SurveyHtmlFormPlugin from '@jspsych/plugin-survey-html-form';
 import SurveyTextPlugin from '@jspsych/plugin-survey-text';
 import PreloadPlugin from '@jspsych/plugin-preload';
 import ExternalHtml from '@jspsych/plugin-external-html';
+ import { nanoid } from 'nanoid'
 
 // ═══════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -38,7 +39,7 @@ function getParticipantInfo() {
     source = "sona"
   }
   return {
-    participantID: prolificID || crypto.randomUUID(),
+    participantID: prolificID || nanoid(),
     source,
     prolificID,
     studyID,
