@@ -94,61 +94,29 @@ function stimulusUrl(filename: string): string {
 //  DATA SAVING
 // ═══════════════════════════════════════════════════════════
 
-const startTimestamp = new Date().toISOString();
+const sessionStart = new Date().toISOString(); // UTC
 
-async function saveData(jsPsych: JsPsych, redirect = false) {
-  const allData = jsPsych.data.get();
-
-  const ratingTrials = allData
-    .filter({ task: 'rating' })
-    .values();
-
-  const attentionTrials = allData
-    .filter({ task: 'attention_check' })
-    .values();
-
-  const payload = {
-    data: {
-      participantID: participant.participantID,
-      source: participant.source,
-      prolificID: participant.prolificID,
-      sonaCode: participant.participantCode,
-      studyID: participant.studyID,
-      sessionID: participant.sessionID,
-      startTimestamp,
-      endTimestamp: new Date().toISOString(),
-      ratingTrials: ratingTrials.map((t: any) => ({
-        stimulus_id: t.stimulus_id,
-        selected_categories: t.selected_categories,
-        confidence: t.confidence,
-        rt: t.rt,
-        trial_index: t.trial_index,
-      })),
-      attentionChecks: attentionTrials.map((t: any) => ({
-        check_type: t.check_type,
-        response: t.response,
-        rt: t.rt,
-      })),
-    },
+function participantMeta() {
+  return {
+    participantID: participant.participantID,
+    source: participant.source,
+    prolificID: participant.prolificID,
+    sonaCode: participant.participantCode,
+    studyID: participant.studyID,
+    sessionID: participant.sessionID,
+    sessionStart,
   };
+}
 
+async function saveTrial(trial: object) {
   try {
     await fetch('submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ trial }),
     });
   } catch (err) {
-    console.error('Failed to save data:', err);
-  }
-
-  if (redirect) {
-    if (participant.source === 'prolific') {
-      let completion_code = await fetch('prolific', {
-        method: 'GET'
-      });
-    }
-    // If not Prolific, participant just sees the thank-you screen — no redirect
+    console.error('Failed to save trial:', err);
   }
 }
 
@@ -367,7 +335,17 @@ function makeRatingTrial(
       data.selected_categories = cats;
       data.confidence = confidence;
 
-      saveData(jsPsych);
+      saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_${data.trial_index}`,
+        trialType: 'rating',
+        trialIndex: data.trial_index,
+        stimulus_id: data.stimulus_id,
+        selected_categories: cats,
+        confidence,
+        rt: data.rt,
+        trialTimestamp: new Date().toISOString(),
+      });
     },
   };
 }
@@ -399,6 +377,18 @@ function attentionCheck1() {
     data: {
       task: 'attention_check',
       check_type: 'describe_task',
+    },
+    on_finish: function (data: any) {
+      saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_attn_${data.trial_index}`,
+        trialType: 'attention_check',
+        checkType: 'describe_task',
+        trialIndex: data.trial_index,
+        response: data.response?.task_description,
+        rt: data.rt,
+        trialTimestamp: new Date().toISOString(),
+      });
     },
   };
 }
@@ -443,6 +433,17 @@ function attentionCheck2() {
     on_finish: function (data: any) {
       const resp = (data.response.ignore_response || '').trim().toLowerCase();
       data.passed = resp === 'purple';
+      saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_attn_${data.trial_index}`,
+        trialType: 'attention_check',
+        checkType: 'ignore_instructions',
+        trialIndex: data.trial_index,
+        response: data.response?.ignore_response,
+        passed: data.passed,
+        rt: data.rt,
+        trialTimestamp: new Date().toISOString(),
+      });
     },
   };
 }
@@ -478,6 +479,18 @@ function attentionCheck3() {
     data: {
       task: 'attention_check',
       check_type: 'audio_transcription',
+    },
+    on_finish: function (data: any) {
+      saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_attn_${data.trial_index}`,
+        trialType: 'attention_check',
+        checkType: 'audio_transcription',
+        trialIndex: data.trial_index,
+        response: data.response?.audio_response,
+        rt: data.rt,
+        trialTimestamp: new Date().toISOString(),
+      });
     },
   };
 }
@@ -599,7 +612,17 @@ async function run() {
   const jsPsych = initJsPsych({
     show_progress_bar: true,
     auto_update_progress_bar: true,
-    on_finish: () => saveData(jsPsych, true),
+    on_finish: async () => {
+      await saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_session_end`,
+        trialType: 'session_end',
+        sessionEnd: new Date().toISOString(),
+      });
+      if (participant.source === 'prolific') {
+        fetch('prolific', { method: 'GET' });
+      }
+    },
   });
 
   const stimuli = await loadStimulusList();

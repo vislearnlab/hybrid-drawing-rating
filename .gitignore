@@ -17,3 +17,5 @@ credentials/
 
 # Logs
 *.log
+
+/utils

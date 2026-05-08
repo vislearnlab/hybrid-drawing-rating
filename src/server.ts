@@ -5,7 +5,7 @@ import fs from 'fs';
 import https from 'https';
 import http from 'http';
 import 'dotenv/config';
-import { Insert } from './mongo';
+import { InsertTrial } from './mongo';
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -29,8 +29,7 @@ if (prefix) {
 
 // Save participant data to MongoDB.
 app.post(`${prefix}/submit`, async (req: Request, res: Response) => {
-  const data = req.body;
-  Insert(data.data, data.data.participantID, 'participantID');
+  InsertTrial(req.body.trial);
   res.end('Data saved!');
 });
 
