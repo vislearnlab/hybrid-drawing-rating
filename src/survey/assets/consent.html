@@ -1,43 +1,8 @@
-<div style="max-width:700px; margin:0 auto; padding:20px; font-family:sans-serif; line-height:1.6;">
-  <h2>Consent to Participate</h2>
-
-  <p><strong>Study Title:</strong> Drawing Identification Study</p>
-  <p><strong>Researchers:</strong> [Your name], [Lab name], UC San Diego</p>
-
-  <h3>Purpose</h3>
-  <p>We are studying how people perceive and identify elements in drawings.
-     You will view a series of drawings and rate what you recognise in each one.</p>
-
-  <h3>Procedures</h3>
-  <p>You will be shown drawings one at a time. For each drawing, you will
-     select categories you recognise and rate your confidence. The study
-     takes approximately 10–15 minutes.</p>
-
-  <h3>Risks</h3>
-  <p>There are no known risks beyond those of everyday computer use.</p>
-
-  <h3>Benefits</h3>
-  <p>There are no direct benefits to you. Your participation will contribute
-     to research on visual perception and cognitive development.</p>
-
-  <h3>Compensation</h3>
-  <p>[Describe compensation here, e.g. Prolific payment details]</p>
-
-  <h3>Confidentiality</h3>
-  <p>Your responses will be stored securely and identified only by a
-     random participant ID. No personally identifying information will
-     be collected.</p>
-
-  <h3>Voluntary Participation</h3>
-  <p>Your participation is voluntary. You may stop at any time without
-     penalty.</p>
-
-  <h3>Contact</h3>
-  <p>If you have questions about this study, please contact
-     [your email]. For questions about your rights as a research
-     participant, contact the UC San Diego IRB at (858) 246-4777.</p>
-
-  <hr>
+<div style="width:100%; max-width:700px; margin:0 auto; padding:20px; font-family:sans-serif; box-sizing:border-box;">
+  <img id="consentPage1" style="width:100%; display:block; margin-bottom:12px;">
+  <img id="consentPage2" style="width:100%; display:block; margin-bottom:12px;">
+  <img id="consentPage3" style="width:100%; display:block; margin-bottom:12px;">
+  <img id="consentPage4" style="width:100%; display:block; margin-bottom:24px;">
 
   <p>
     <input type="checkbox" id="consent_checkbox">
@@ -51,4 +16,13 @@
   </p>
 
   <button id="start" class="jspsych-btn">Begin Study</button>
+
+  <script>
+    const base = new URL(window.location.href).origin +
+                 new URL(window.location.href).pathname.replace(/\/+$/, '');
+    document.getElementById('consentPage1').src = base + '/consentPage1.png';
+    document.getElementById('consentPage2').src = base + '/consentPage2.png';
+    document.getElementById('consentPage3').src = base + '/consentPage3.png';
+    document.getElementById('consentPage4').src = base + '/consentPage4.png';
+  </script>
 </div>

@@ -17,7 +17,7 @@ const CATEGORIES = [
   'bike', 'bee', 'elephant', 'snail', 'mushroom', 'house', 'rabbit',
   'boat', 'sheep', 'fish', 'tiger', 'frog', 'train', 'cat'
 ];
-const NUM_SELECTIONS = 4;
+const NUM_SELECTIONS = 5;
 const PROD = true;
 
 // ═══════════════════════════════════════════════════════════
@@ -427,7 +427,7 @@ function attentionCheck2() {
   };
 }
 
-// Placeholder — replace with your real audio file and expected answer
+// Placeholder — replace with real audio file and expected answer
 function attentionCheck3() {
   const audioSrc = new URL('./assets/audio/attention_check.mp3', import.meta.url).href;
 
@@ -493,6 +493,68 @@ function consentTrial() {
     cont_btn: 'start',
     execute_script: true,
     check_fn: checkConsent,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  IN-PERSON FLOW (no Prolific/SONA URL params)
+// ═══════════════════════════════════════════════════════════
+
+function inPersonIdTrial() {
+  return {
+    type: SurveyHtmlFormPlugin,
+    preamble: `
+      <div class="instr-card">
+        <h1>Participant ID</h1>
+        <p>Please enter the participant ID provided by the researcher.</p>
+      </div>
+    `,
+    html: `
+      <div style="text-align:center;margin:16px 0;">
+        <input type="text" name="participant_id" required
+               placeholder="e.g. P001"
+               style="width:100%;max-width:300px;padding:10px;
+                      font-size:16px;border:1.5px solid #ccc;
+                      border-radius:6px;">
+      </div>
+    `,
+    button_label: 'Continue',
+    on_finish: function (data: any) {
+      const entered = (data.response?.participant_id || '').trim();
+      if (entered) participant.participantID = entered;
+    },
+  };
+}
+
+function inPersonConsentTrial() {
+  return {
+    type: SurveyHtmlFormPlugin,
+    preamble: `
+      <div class="instr-card">
+        <h1>Consent</h1>
+      </div>
+    `,
+    html: `
+      <div style="text-align:left;max-width:560px;margin:0 auto;">
+        <label style="display:flex;align-items:flex-start;gap:12px;
+                      font-size:15px;line-height:1.5;cursor:pointer;">
+          <input type="checkbox" name="consent" value="agreed" required
+                 style="margin-top:3px;flex-shrink:0;width:18px;height:18px;">
+          <span>I have been informed about this study by a researcher and I agree to participate.</span>
+        </label>
+      </div>
+    `,
+    button_label: 'Begin',
+    on_finish: function (data: any) {
+      saveTrial({
+        ...participantMeta(),
+        trialKey: `${participant.participantID}_consent`,
+        trialType: 'consent',
+        consentType: 'in_person',
+        agreed: data.response?.consent === 'agreed',
+        trialTimestamp: new Date().toISOString(),
+      });
+    },
   };
 }
 
@@ -621,13 +683,19 @@ async function run() {
   const attentionChecks: any[] = jsPsych.randomization.shuffle([
     attentionCheck1(),
     attentionCheck2(),
-    attentionCheck3(),
+    // attentionCheck3(),
   ]);
 
   const mainBlock = interleaveAttentionChecks(ratingTrials, attentionChecks);
 
+  const openingTrials = !PROD
+    ? []
+    : participant.source === 'direct'
+      ? [inPersonIdTrial(), inPersonConsentTrial()]
+      : [consentTrial()];
+
   const timeline: any[] = [
-    ...(PROD ? [consentTrial()] : []),
+    ...openingTrials,
     preloadTrial,
     ...instructionScreens(),
     ...mainBlock,
