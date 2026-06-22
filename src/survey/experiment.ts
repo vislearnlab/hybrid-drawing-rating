@@ -60,30 +60,9 @@ interface Stimulus {
   metadata?: Record<string, any>;
 }
 
-// In production: replace with a real fetch or static list.
 async function loadStimulusList(): Promise<Stimulus[]> {
-  // Option A: fetch a JSON index from the server
-  // const res = await fetch('stimuli/index.json');
-  // return await res.json();
-
-  // Option B: fetch a CSV index and parse it
-  // const res = await fetch('stimuli/index.csv');
-  // const text = await res.text();
-  // return text.trim().split('\n').slice(1).map(line => {
-  //   const [id, image] = line.split(',');
-  //   return { id, image };
-  // });
-
-  // Stub for development / demo:
-  return [
-    { id: 'demo_01', image: 'a_bike_bee_sketch_age4_test.png' },
-    { id: 'demo_02', image: 'a_mushroom_house_sketch_age5_test.png' },
-    { id: 'demo_03', image: 'a_rabbit_boat_sketch_age8_test.png' },
-    { id: 'demo_04', image: 'a_sheep_fish_sketch_age6_test.png' },
-    { id: 'demo_05', image: 'a_tiger_frog_sketch_age5_test.png' },
-    { id: 'demo_06', image: 'a_train_cat_sketch_age9_test.png' },
-    { id: 'demo_07', image: 'an_elephant_snail_sketch_age7_test.png'}
-  ];
+  const res = await fetch('stimuli/index.json');
+  return await res.json();
 }
 
 function stimulusUrl(filename: string): string {
