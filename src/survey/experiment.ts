@@ -19,6 +19,8 @@ const CATEGORIES = [
 ];
 const NUM_SELECTIONS = 5;
 const PROD = true;
+const CATCH_TRIAL_IMAGE = 'attention_check.png';
+const CATCH_TRIAL_CORRECT_CATEGORIES: string[] = ['elephant', 'snail']; // TODO: fill in correct categories for attention_check.png
 
 // ═══════════════════════════════════════════════════════════
 //  PARTICIPANT IDENTITY
@@ -108,6 +110,7 @@ function makeRatingTrial(
   stimulus: Stimulus,
   trialIndex: number,
   totalTrials: number,
+  isCatch = false,
 ) {
   const shuffled: string[] = jsPsych.randomization.shuffle([...CATEGORIES]);
 
@@ -317,13 +320,14 @@ function makeRatingTrial(
       saveTrial({
         ...participantMeta(),
         trialKey: `${participant.participantID}_${data.trial_index}`,
-        trialType: 'rating',
+        trialType: isCatch ? 'catch_trial' : 'rating',
         trialIndex: data.trial_index,
         stimulus_id: data.stimulus_id,
         selected_categories: cats,
         confidence,
         rt: data.rt,
         trialTimestamp: new Date().toISOString(),
+        ...(isCatch ? { correctCategories: CATCH_TRIAL_CORRECT_CATEGORIES } : {}),
       });
     },
   };
@@ -372,53 +376,41 @@ function attentionCheck1() {
   };
 }
 
-// Placeholder — replace with your real "ignore instructions" check
 function attentionCheck2() {
+  const choices = ['bike', 'purple', 'house', 'cat'];
+  const purpleIndex = choices.indexOf('purple');
   return {
-    type: SurveyHtmlFormPlugin,
-    preamble: `
+    type: HtmlButtonResponsePlugin,
+    stimulus: `
       <div class="attn-card">
         <h2>Quick check-in</h2>
+        <div class="attn-body">
+          <p>Please read the following instructions carefully before answering.</p>
+          <p>
+            We would like you to select the category that appears most
+            frequently in children's drawings. However, to show that you
+            are reading this carefully, please
+            <strong>ignore the above instructions</strong> and select
+            <strong>purple</strong> from the options below.
+          </p>
+        </div>
       </div>
     `,
-    html: `
-      <div class="attn-body">
-        <p>
-          Please read the following instructions carefully before
-          answering.
-        </p>
-        <p>
-          We would like you to select all the categories that you think
-          appear most frequently in children's drawings. However, to
-          show that you are reading this carefully, please
-          <strong>ignore the above instructions</strong> and simply type
-          the word <strong>purple</strong> in the box below.
-        </p>
-        <p>
-          <input type="text" name="ignore_response"
-                 placeholder="Type here..." required
-                 style="width:100%;max-width:300px;padding:8px;
-                        border:1.5px solid #ccc;border-radius:6px;
-                        font-size:15px;">
-        </p>
-      </div>
-    `,
-    button_label: 'Continue',
+    choices,
     data: {
       task: 'attention_check',
       check_type: 'ignore_instructions',
       correct_answer: 'purple',
     },
     on_finish: function (data: any) {
-      const resp = (data.response.ignore_response || '').trim().toLowerCase();
-      data.passed = resp === 'purple';
+      data.passed = data.response === purpleIndex;
       saveTrial({
         ...participantMeta(),
         trialKey: `${participant.participantID}_attn_${data.trial_index}`,
         trialType: 'attention_check',
         checkType: 'ignore_instructions',
         trialIndex: data.trial_index,
-        response: data.response?.ignore_response,
+        response: choices[data.response],
         passed: data.passed,
         rt: data.rt,
         trialTimestamp: new Date().toISOString(),
@@ -574,8 +566,7 @@ function instructionScreens() {
           <p><strong>2.</strong> For each selected category, rate
              <strong>how confident</strong> you are that you can
              recognise it (0 = not at all, 100 = extremely confident).</p>
-          <p>There are no right or wrong answers — we are interested
-             in your honest perception.</p>
+          <p>There are no right or wrong answers.</p>
           <p class="key-hint">Press <strong>any key</strong> to continue</p>
         </div>
       `,
@@ -586,12 +577,17 @@ function instructionScreens() {
         <div class="instr-card">
           <h1>A few things to note</h1>
           <p>The categories will appear in a random order each time.</p>
-          <p>Your confidence ratings are independent — they do not
+          <p>You must always select exactly <strong>${NUM_SELECTIONS}</strong> categories,
+             even if you don't think you can see that many things in the drawing.
+             If you run out of things you clearly recognize, select your best
+             guesses for the remaining slots and rate them with
+             <strong>low confidence</strong>.</p>
+          <p>Your confidence ratings are independent. They do not
              need to add up to any particular total.</p>
           <p>Please take your time. There is no time limit.</p>
           <p>You will occasionally see brief check-in questions.
              Please answer them carefully.</p>
-          <p>The experiment takes about <strong>60 minutes</strong>.</p>
+          <p>The experiment takes about <strong>20 minutes</strong>.</p>
           <p class="key-hint">Press <strong>any key</strong> to begin</p>
         </div>
       `,
@@ -661,13 +657,14 @@ async function run() {
         sessionEnd: new Date().toISOString(),
       });
       if (participant.source === 'prolific') {
-        fetch('prolific', { method: 'GET' });
+        window.location.href = 'prolific';
       }
     },
   });
 
   const stimuli = await loadStimulusList();
-  const shuffledStimuli: Stimulus[] = jsPsych.randomization.shuffle(stimuli);
+  const catchStimulus: Stimulus = { id: 'catch_trial', image: CATCH_TRIAL_IMAGE };
+  const shuffledStimuli: Stimulus[] = jsPsych.randomization.shuffle([...stimuli, catchStimulus]);
 
   const preloadTrial = {
     type: PreloadPlugin,
@@ -677,7 +674,7 @@ async function run() {
   };
 
   const ratingTrials = shuffledStimuli.map((stim, i) =>
-    makeRatingTrial(jsPsych, stim, i, shuffledStimuli.length),
+    makeRatingTrial(jsPsych, stim, i, shuffledStimuli.length, stim.id === 'catch_trial'),
   );
 
   const attentionChecks: any[] = jsPsych.randomization.shuffle([
