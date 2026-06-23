@@ -562,10 +562,10 @@ function instructionScreens() {
           <p>You will see a series of drawings. For each one:</p>
           <p><strong>1.</strong> Select <strong>${NUM_SELECTIONS}</strong>
              categories from a list of ${CATEGORIES.length} that you
-             recognise in the drawing.</p>
+             recognize in the drawing.</p>
           <p><strong>2.</strong> For each selected category, rate
              <strong>how confident</strong> you are that you can
-             recognise it (0 = not at all, 100 = extremely confident).</p>
+             recognize it (0 = not at all, 100 = extremely confident).</p>
           <p>There are no right or wrong answers.</p>
           <p class="key-hint">Press <strong>any key</strong> to continue</p>
         </div>
